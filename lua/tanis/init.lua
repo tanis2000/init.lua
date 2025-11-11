@@ -1,7 +1,7 @@
-require("tanis.packer")
 require("tanis.set")
 require("tanis.remap")
 require("tanis.autocmd")
+require("tanis.lazy")
 
 -- disable netrw at the very start of your init.lua
 vim.g.loaded_netrw = 1
