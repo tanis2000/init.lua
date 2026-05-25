@@ -36,3 +36,9 @@ vim.api.nvim_create_autocmd('LspAttach', {
       vim.tbl_extend('force', opts, { desc = "Signature help" }))
   end
 })
+
+vim.filetype.add({
+  extension = {
+    avsc = 'json'
+  }
+})

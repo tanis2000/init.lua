@@ -12,9 +12,9 @@ vim.keymap.set("i", "<C-k>", '<Up>', { desc = 'Move up' })
 -- Exec command
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex, { desc = 'Execute Command' })
 
--- Edit the packer file
-vim.keymap.set("n", "<leader>vpp", "<cmd>e ~/.config/nvim/<CR>",
-  { desc = 'Edit the Packer config file' });
+-- Edit the Neovim configuration
+vim.keymap.set("n", "<leader>vcc", "<cmd>e ~/.config/nvim/<CR>",
+  { desc = 'Edit the Neovim config file' });
 
 -- Execute the command on the highlighted line
 vim.keymap.set("n", "<leader><leader>", function()
@@ -49,8 +49,13 @@ vim.keymap.set("n", "<leader>fa", "<cmd>Telescope git_status<cr>")
 vim.keymap.set("n", "<leader>ft", "<cmd>Telescope terms<cr>")
 vim.keymap.set("n", "<leader>fi", "<cmd>Telescope find_files follow=true no_ignore=true hidden=true<cr>")
 
--- Close buffer
-vim.keymap.set("n", "<leader>bc", ":bdelete<CR>")
+-- Buffers
+vim.keymap.set("n", "[b", ":bprev<CR>", { desc = 'Previous buffer' })
+vim.keymap.set("n", "]b", ":bnext<CR>", { desc = 'Next buffer' })
+vim.keymap.set("n", "<leader>bb", "<cmd>e #<CR>", { desc = 'Switch to Other buffer' })
+vim.keymap.set("n", "<leader>bc", ":bdelete<CR>", { desc = 'Close buffer' })
+vim.keymap.set("n", "<leader>bn", ":bnext<CR>", { desc = 'Next buffer' })
+vim.keymap.set("n", "<leader>bp", ":bprev<CR>", { desc = 'Previous buffer' })
 
 -- Git
 vim.keymap.set("n", "<leader>gs", vim.cmd.Git)
@@ -58,13 +63,16 @@ vim.keymap.set("n", "<leader>gs", vim.cmd.Git)
 -- Comments
 vim.keymap.set("n", "<C-/>", "<Plug>(comment_toggle_linewise_current)")
 vim.keymap.set("n", "<C-?>", "<Plug>(comment_toggle_blockwise_current")
+vim.keymap.set("n", "<C-->", "<Plug>(comment_toggle_linewise_current)")
 vim.keymap.set("x", "<C-/>", "<Plug>(comment_toggle_linewise_visual)")
 vim.keymap.set("x", "<C-?>", "<Plug>(comment_toggle_blockwise_visual)")
+vim.keymap.set("x", "<C-->", "<Plug>(comment_toggle_linewise_visual)")
 vim.keymap.set("i", "<C-/>", "<Plug>(comment_toggle_linewise_current)")
 vim.keymap.set("i", "<C-?>", "<Plug>(comment_toggle_blockwise_current)")
+vim.keymap.set("i", "<C-->", "<Plug>(comment_toggle_linewise_current)")
 
 -- Project
-vim.keymap.set("n", "<leader>p", "<cmd>Telescope projects<cr>")
+vim.keymap.set("n", "<leader>p", "<cmd>Telescope projects<cr>", { desc = "Telescope projects" })
 
 -- Quit confirmation and prohibit quit without saving on error
 vim.keymap.set("n", "<leader>q", "<cmd>confirm q<CR>")
@@ -99,7 +107,6 @@ vim.keymap.set("n", "<leader>cc", "<cmd>CMakeClean<cr>")
 vim.keymap.set("n", "<leader>cb", "<cmd>CMakeBuild<cr>")
 vim.keymap.set("n", "<leader>ct", "<cmd>CMakeToggle<cr>")
 
-
 -- Copy to system clipboard
 vim.keymap.set({ "n", "v" }, "<leader>y", [["+y]], { desc = 'Copy to system clipboard' })
 vim.keymap.set("n", "<leader>Y", [["+Y]], { desc = 'Copy to system clipboard' })
@@ -116,12 +123,46 @@ vim.keymap.set("n", "<leader>st", function()
   vim.cmd.term()
 end, { desc = 'Open terminal' })
 
--- Diagnostic
-vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+-- Location list
+vim.keymap.set("n", "<leader>xl", function()
+  local success, err = pcall(vim.fn.getloclist(0, { winid = 0 }).winid ~= 0 and vim.cmd.lclose or vim.cmd.lopen)
+  if not success and err then
+    vim.notify(err, vim.log.levels.ERROR)
+  end
+end, { desc = "Location List" })
+
+-- Quickfix list
+vim.keymap.set("n", "<leader>xq", function()
+  local success, err = pcall(vim.fn.getqflist({ winid = 0 }).winid ~= 0 and vim.cmd.cclose or vim.cmd.copen)
+  if not success and err then
+    vim.notify(err, vim.log.levels.ERROR)
+  end
+end, { desc = "Quickfix List" })
 
 -- Quickfix movement
-vim.keymap.set('n', '<C-j>', "<cmd>cnext<CR>zz", { desc = 'Move to next quickfix item' })
-vim.keymap.set('n', '<C-k>', "<cmd>cprev<CR>zz", { desc = 'Move to previous quickfix item' })
+-- vim.keymap.set('n', '<C-j>', "<cmd>cnext<CR>zz", { desc = 'Move to next quickfix item' })
+-- vim.keymap.set('n', '<C-k>', "<cmd>cprev<CR>zz", { desc = 'Move to previous quickfix item' })
+vim.keymap.set("n", "[q", vim.cmd.cprev, { desc = "Previous Quickfix" })
+vim.keymap.set("n", "]q", vim.cmd.cnext, { desc = "Next Quickfix" })
+
+-- Diagnostic
+vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+local diagnostic_goto = function(next, severity)
+  return function()
+    vim.diagnostic.jump({
+      count = (next and 1 or -1) * vim.v.count1,
+      severity = severity and vim.diagnostic.severity[severity] or nil,
+      float = true,
+    })
+  end
+end
+vim.keymap.set("n", "<leader>cd", vim.diagnostic.open_float, { desc = "Line Diagnostics" })
+vim.keymap.set("n", "]d", diagnostic_goto(true), { desc = "Next Diagnostic" })
+vim.keymap.set("n", "[d", diagnostic_goto(false), { desc = "Prev Diagnostic" })
+vim.keymap.set("n", "]e", diagnostic_goto(true, "ERROR"), { desc = "Next Error" })
+vim.keymap.set("n", "[e", diagnostic_goto(false, "ERROR"), { desc = "Prev Error" })
+vim.keymap.set("n", "]w", diagnostic_goto(true, "WARN"), { desc = "Next Warning" })
+vim.keymap.set("n", "[w", diagnostic_goto(false, "WARN"), { desc = "Prev Warning" })
 
 -- List movement (uses the current window)
 vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz", { desc = 'Move to next item in list' })
@@ -133,42 +174,49 @@ vim.api.nvim_set_keymap("n", "<leader>db", ":DapToggleBreakpoint<CR>", { noremap
 vim.api.nvim_set_keymap("n", "<leader>dc", ":DapContinue<CR>", { noremap = true, desc = 'Continue execution' })
 vim.api.nvim_set_keymap("n", "<leader>dr", ":lua require('dapui').open({reset = true})<CR>",
   { noremap = true, desc = 'Reset DAP' })
-vim.keymap.set('n', '<F10>', function() require('dap').step_over() end, { desc='Step over'})
-vim.keymap.set('n', '<F11>', function() require('dap').step_into() end, {desc='Step into'})
-vim.keymap.set('n', '<F12>', function() require('dap').step_out() end, {desc='Step out'})
-vim.keymap.set('n', '<Leader>dB', function() require('dap').set_breakpoint() end, {desc='Set breakpoint'})
-vim.keymap.set('n', '<Leader>dlp', function() require('dap').set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end, {desc='Log point message'})
-vim.keymap.set('n', '<Leader>dp', function() require('dap').repl.open() end, {desc='Repl'})
-vim.keymap.set('n', '<Leader>dl', function() require('dap').run_last() end, {desc='Run last'})
-vim.keymap.set({'n', 'v'}, '<Leader>dh', function()
+vim.keymap.set('n', '<F10>', function() require('dap').step_over() end, { desc = 'Step over' })
+vim.keymap.set('n', '<F11>', function() require('dap').step_into() end, { desc = 'Step into' })
+vim.keymap.set('n', '<F12>', function() require('dap').step_out() end, { desc = 'Step out' })
+vim.keymap.set('n', '<Leader>dB', function() require('dap').set_breakpoint() end, { desc = 'Set breakpoint' })
+vim.keymap.set('n', '<Leader>dlp',
+  function() require('dap').set_breakpoint(nil, nil, vim.fn.input('Log point message: ')) end, {
+    desc =
+    'Log point message'
+  })
+vim.keymap.set('n', '<Leader>dp', function() require('dap').repl.open() end, { desc = 'Repl' })
+vim.keymap.set('n', '<Leader>dl', function() require('dap').run_last() end, { desc = 'Run last' })
+vim.keymap.set({ 'n', 'v' }, '<Leader>dh', function()
   require('dap.ui.widgets').hover()
-end, {desc='Hover'})
-vim.keymap.set({'n', 'v'}, '<Leader>dv', function()
+end, { desc = 'Hover' })
+vim.keymap.set({ 'n', 'v' }, '<Leader>dv', function()
   require('dap.ui.widgets').preview()
-end, {desc='Preview'})
+end, { desc = 'Preview' })
 vim.keymap.set('n', '<Leader>df', function()
   local widgets = require('dap.ui.widgets')
   widgets.centered_float(widgets.frames)
-end, {desc='Frames'})
+end, { desc = 'Frames' })
 vim.keymap.set('n', '<Leader>ds', function()
   local widgets = require('dap.ui.widgets')
   widgets.centered_float(widgets.scopes)
-end, {desc='Scopes'})
+end, { desc = 'Scopes' })
 
 -- Harpoon
 vim.api.nvim_set_keymap("n", "<leader>ht", ":lua require('harpoon.ui').toggle_quick_menu()<CR>",
   { noremap = true, desc = 'Toggle Harpoon' })
 
 -- Move between buffers with tab/shift-tab
-vim.keymap.set('n', '<Tab>', ':bnext<CR>', { desc = 'Move to next buffer'})
-vim.keymap.set('n', '<S-Tab>', ':bprev<CR>', { desc = 'Move to previous buffer'})
+vim.keymap.set('n', '<Tab>', ':bnext<CR>', { desc = 'Move to next buffer' })
+vim.keymap.set('n', '<S-Tab>', ':bprev<CR>', { desc = 'Move to previous buffer' })
 
 -- WhichKey
-vim.keymap.set('n', '<leader>wk', '<cmd>WhichKey<CR>', { desc = 'WhichKey all'})
+vim.keymap.set('n', '<leader>wk', '<cmd>WhichKey<CR>', { desc = 'WhichKey all' })
 
 -- Flash
-vim.keymap.set({'n', 'x', 'o'}, 's', function() require("flash").jump() end, {desc='Flash'})
-vim.keymap.set({'n', 'x', 'o'}, 'S', function() require("flash").treesitter() end, {desc='Flash Treesitter'})
-vim.keymap.set('o', 'r', function() require("flash").remote() end, {desc='Remote Flash'})
-vim.keymap.set({'o', 'x'}, 'R', function() require("flash").treesitter_search() end, {desc='Treesitter Search'})
-vim.keymap.set('c', '<c-s>', function() require("flash").toggle() end, {desc='Toggle Flash'})
+vim.keymap.set({ 'n', 'x', 'o' }, 's', function() require("flash").jump() end, { desc = 'Flash' })
+vim.keymap.set({ 'n', 'x', 'o' }, 'S', function() require("flash").treesitter() end, { desc = 'Flash Treesitter' })
+vim.keymap.set('o', 'r', function() require("flash").remote() end, { desc = 'Remote Flash' })
+vim.keymap.set({ 'o', 'x' }, 'R', function() require("flash").treesitter_search() end, { desc = 'Treesitter Search' })
+vim.keymap.set('c', '<c-s>', function() require("flash").toggle() end, { desc = 'Toggle Flash' })
+
+-- Zen mode
+vim.keymap.set({ 'n', 'x', 'i', 'o' }, 'uZ', function() require("zen-mode").toggle({}) end, { desc = 'Toggle Zen Mode' })
